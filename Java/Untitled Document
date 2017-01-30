@@ -1,0 +1,19 @@
+Java数组的协变：
+  数组的协变性(covariant)是指：
+  如果类Base是类Sub的基类，那么Base[]就是Sub[]的基类。
+  注意，Java的泛型是不支持协变的。
+  协变可能会造成的问题：
+  
+	public static void main(String[] args) { 
+	    Object[] array = new String[10]; 
+	    array[0] = 10; 
+	}
+  它是可以编译通过的，因为数组是协变的，Object[]类型的引用可以指向一个String[]类型的对象。
+  但运行时会有如下异常：Exception in thread "main" java.lang.ArrayStoreException: java.lang.Integer
+  但是对于泛型就不会出现这种情况了：
+
+	public static void main(String[] args) { 
+	    List< Object> list = new ArrayList< String>(); 
+	    list.add(10); 
+	}
+  这段代码连编译都不能通过。
