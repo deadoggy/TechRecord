@@ -1,0 +1,156 @@
+什么时候抛出异常(throw)
+
+
+1、验证-抛出：当程序检测到非预期状态、当前处理层无法处理的，应创建一个新的异常对象，并使用关键字throw，将异常抛给调用者
+
+
+
+
+
+if (somethingIsInvalid) { 
+    throw new SomeException("msg");
+}
+
+2、检测-上抛：当调用了一个声明受检异常的方法，当前处理层无法处理，需要进行适当包装的，应创建一个异常封装它，并使用关键字throw，将异常抛给调用者
+
+} catch (SomeException se) { 
+    throw new MethodDeclaredException(se);
+}
+
+3、re-throw: 当调用了的方法抛出异常时(受检或非受检)，根据情况可catch后进行一定的处理，然后重新throw出去(或封装一下再throw)
+
+} catch (SomeException se) {
+    doSomethingHere();  
+    throw se; 
+}
+什么时候声明异常(throws)
+
+
+1、受检异常必须声明，非受检异常可不必声明
+
+public void doSomething() throws ResourceFailureException {
+
+2、目的：明确告知调用者可能抛出哪些异常；JavaDoc也可对该异常进行说明使API更加友善
+
+
+
+finally的使用
+
+
+使用一个底层资源时，完成任务后必须主动关闭它。关闭的目的可能是释放计算机某种设备、网络、也可能是改变资源的状态将之归还给管理者等。
+
+
+必须做的事情，在try-finally块的finally中完成，每关闭一个资源应单独再做一次try-catch：
+
+Resource resource = null; 
+try {   
+    resource = loadResource();  
+    return doSomething(resource); 
+} finally {
+    if (resource != null) {
+        try { 
+            resource.close();
+        } catch (Exception ex) {         
+            logger.error("", ex);  
+        } 
+    } 
+}
+
+什么时候catch异常
+
+
+使用
+
+try {     
+    execute(); 
+} catch (SomeExceptin se) {  
+    handlerSomeException(se); 
+}
+
+可以保证当try中的语句发生SomeException异常的时候能够执行handlerSomeException() 方法。 使用catch语句，使execute抛出的SomeException异常不会中断整个调用，而所谓中断就意味着一种无法处理的崩溃。 如果调用者"懂得"如何处理一个异常、能够正确地调用后续的流程，则应该坚决使用catch语句捕获它以完成业务。 如果 execute() 可抛出多种异常，调用者对不同的异常可以有不同的业务流程时，应该分别catch，不能仅仅只是catch 住一个普通的基类异常。
+
+
+异常的日志输出
+
+
+对于可预知的或者已经处理的异常，可以根据业务需要不输出日志，或者输出简单日志，例如：
+
+try {    
+    getUserInfo(userId);
+} catch (TimeoutException e) {    
+    //deal with e  
+    logger.error("UserInfo timeout:" + userId);
+}
+
+而对于那些不可预知的，或者捕获后未做任何处理的异常，则最好将异常信息输出，以方便调试，例如：
+
+try {    
+    doSomething();
+} catch (Exception e) {    
+    //OR e.printStackTrace();
+    logger.error("", e);    
+}
+
+注意：捕获异常后不处理也不输出log是一种非常不负责任的行为，这会造成问题很难被定位，极大地提高debug成本！
+
+checked异常和unchecked异常的区别
+
+
+checked异常
+
+
+checked异常是指那些直接继承自Exception的异常，如果一个方法声明要抛出某种或者某几种checked异常，那么此方法的调用者必须显式地处理这些异常，或者也声明要抛出这些异常，否则，代码将无法编译通过。例如：
+
+//方法foo声明可能会抛出IOException
+public void foo() throws IOException {
+    if (somethingIsInvalid) {
+         throw new IOException();    
+    }
+}
+
+//方法bar1调用foo，它需要处理foo抛出的IOException
+public void bar1() {
+    try {
+        foo();    
+    } catch (IOException e) {        
+        //deal with e    
+    }
+}
+
+//方法bar2调用foo，但是它无法处理foo抛出的IOException，则声明自己也会抛出
+//IOException，将异常丢给更上层的调用者来处理
+public void bar2() throws IOException { 
+    foo();
+}
+
+unchecked异常
+
+
+unchecked异常是指那些直接继承自RuntimeException的异常（比较特殊的是RuntimeException也是Exception的子类），它通常是由程序运行时的错误引起的，由于编译器并不强制要求程序必须处理RuntimeException，所以叫unchecked异常。unchecked异常经典例子是除0或者空指针：
+
+public int divide(int n, int val) {
+    if (val == 0) {
+       throw new ArithmeticException("/ by zero");
+    }    
+    return n / val;
+}
+    
+public void foo(String s) {
+    if (s == null) {
+        throw new NullPointerException();
+    }
+    System.out.println(s);
+}
+
+微妙的区别
+
+
+通过定义，很容易区分checked异常和unchecked异常，但是对于coder来说，在设计自定义异常的时候，何时使用checked异常，何时使用unchecked异常，的确是一个很微妙的话题。一般来讲，checked异常是和具体应用逻辑相关的异常，如文件没有找到（FileNotFoundException），这些异常总可能发生，难以避免，并且底层逻辑希望由上层逻辑来处理这些异常情况，于是底层逻辑声明要抛出一个checked异常。而unchecked异常通常用来表示那些程序运行时发生的错误，这些错误通常有希望通过程序来避免，例如：NullPointerException可以通过程序判断
+
+if (ref != null) {
+    goAhead();
+} else {
+    stop();
+}
+
+来避免。 也就是说unchecked异常存在的价值更倾向于帮助程序员发现程序中的错误和不够严谨的逻辑，并且修复这些问题。
