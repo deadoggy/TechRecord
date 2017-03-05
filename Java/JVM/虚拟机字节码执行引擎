@@ -1,5 +1,57 @@
 一、 运行时栈帧
   局部变量表 操作栈 动态链接 返回地址
   栈帧概念结构参考本路径下图片
-  a.局部变量表以Slot为容量单位, Slot可以存放32bit内的数据
-  b.
+  a.局部变量表以Slot为容量单位, Slot可以存放32bit内的数据。Slot是可以复用的，会对GC有一定的影响。
+
+  执行下面代码：
+    /**
+    * Created by deadoggy on 17-3-5.
+    * -XX:SurvivorRatio=8
+    -XX:+PrintGCDetails
+    -XX:MaxTenuringThreshold=1
+    */
+    public class SlotAndGC {
+
+      public static void main(String[] argv){
+        {
+          byte[] a =  new byte[64 * 1024 * 1024];
+        }
+        System.gc();
+      }
+    }
+  下面是gc的信息：
+  [GC (System.gc()) [PSYoungGen: 68608K->448K(76800K)] 68608K->65984K(247808K), 0.0289419 secs] [Times: user=0.04 sys=0.01, real=0.04 secs]
+  [Full GC (System.gc()) [PSYoungGen: 448K->0K(76800K)] [ParOldGen: 65536K->65878K(171008K)] 65984K->65878K(247808K), [Metaspace: 3000K->3000K(1056768K)], 0.0181466 secs] [Times: user=0.01 sys=0.00, real=0.01 secs]
+  Heap
+  PSYoungGen      total 76800K, used 686K [0x000000076d000000, 0x0000000772300000, 0x00000007c0000000)
+    eden space 68608K, 1% used [0x000000076d000000,0x000000076d0ab9c8,0x0000000771300000)
+    from space 8192K, 0% used [0x0000000771300000,0x0000000771300000,0x0000000771b00000)
+    to   space 8192K, 0% used [0x0000000771b00000,0x0000000771b00000,0x0000000772300000)
+  ParOldGen       total 171008K, used 65878K [0x00000006c7000000, 0x00000006d1700000, 0x000000076d000000)
+    object space 171008K, 38% used [0x00000006c7000000,0x00000006cb055848,0x00000006d1700000)
+  Metaspace       used 3021K, capacity 4494K, committed 4864K, reserved 1056768K
+    class space    used 330K, capacity 386K, committed 512K, reserved 1048576K
+  可以发现内存并没有被回收，老年代中还是有64M的内存占用。但如果把代码改成：
+      public static void main(String[] argv){
+        {
+          byte[] a =  new byte[64 * 1024 * 1024];
+        }
+        int b = 12;
+        System.gc();
+      }
+
+  会发现gc的信息如下：
+  [GC (System.gc()) [PSYoungGen: 68608K->432K(76800K)] 68608K->440K(247808K), 0.0015608 secs] [Times: user=0.00 sys=0.00, real=0.00 secs]
+  [Full GC (System.gc()) [PSYoungGen: 432K->0K(76800K)] [ParOldGen: 8K->352K(171008K)] 440K->352K(247808K), [Metaspace: 3116K->3116K(1056768K)], 0.0069700 secs] [Times: user=0.01 sys=0.01, real=0.01 secs]
+  Heap
+  PSYoungGen      total 76800K, used 1372K [0x000000076d000000, 0x0000000772300000, 0x00000007c0000000)
+    eden space 68608K, 2% used [0x000000076d000000,0x000000076d157280,0x0000000771300000)
+    from space 8192K, 0% used [0x0000000771300000,0x0000000771300000,0x0000000771b00000)
+    to   space 8192K, 0% used [0x0000000771b00000,0x0000000771b00000,0x0000000772300000)
+  ParOldGen       total 171008K, used 352K [0x00000006c7000000, 0x00000006d1700000, 0x000000076d000000)
+    object space 171008K, 0% used [0x00000006c7000000,0x00000006c7058160,0x00000006d1700000)
+  Metaspace       used 3169K, capacity 4494K, committed 4864K, reserved 1056768K
+    class space    used 349K, capacity 386K, committed 512K, reserved 1048576K
+  老年代中的64M内存被释放了。
+
+  因为第一次中虽然逻辑上a已经不会被访问了，但是并没有其他局部变量要复用a的内存。 但是第二段中b要复用这些Slot, 所以GC后64M内存被清空了。
