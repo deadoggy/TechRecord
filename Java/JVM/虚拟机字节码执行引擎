@@ -114,9 +114,107 @@ c. 动态链接： 每个栈帧都会包含一个指向运行时常量池的引�
 
   main函数中重载方法的选择取决于参数的数量和数据类型， 但是编译器在重载时是根据变量的静态类型来进行选择的。二者静态类型都是
   Human.
+  24: aload_3
+  25: aload_1
+  26: invokevirtual #13                 // Method say:(LStaticDispatch$Human;)V
+  29: aload_3
+  30: aload_2
+  31: invokevirtual #13                 // Method say:(LStaticDispatch$Human;)V
+  26 和 31的注释都说明调用的是以Human对象为参数的say方法，因此在编译器阶段就确定了方法的接受者。 
 
   所有依赖静态类型进行分派都叫做静态分派， 比如 重载 。静态分派发生在编译阶段，所以并不是由虚拟机来执行的。但是此时确定的重载版本
   并不是唯一的，只是一个相对好的选择。具体代码参见《深入理解JVM（第二版）》 p249 - 重载方法匹配优先级 的代码。
 
 
   2.2.2 动态分派 -- 重写
+
+
+  观察如下代码：
+  /**
+  * Created by deadoggy on 17-3-6.
+  */
+  public class StaticDispatch {
+
+      public static abstract class Human{
+          public abstract void sayHello();
+
+      }
+
+      public static class Man extends  Human{
+          @Override
+          public void sayHello(){
+              System.out.println("man");
+          }
+      }
+
+      public static class Woman extends  Human{
+          @Override
+          public void sayHello(){
+              System.out.println("woman");
+          }
+          }
+
+
+      public static void main(String[] argv){
+          Human man = new Man();
+          Human woman = new Woman();
+
+          man.sayHello();
+          woman.sayHello();
+
+          man = new Woman();
+          man.sayHello();
+      }
+  }
+
+  输出：
+     man
+     woman
+     woman
+
+
+  main方法的字节码如下所示：
+
+  public static void main(java.lang.String[]);
+  descriptor: ([Ljava/lang/String;)V
+  flags: ACC_PUBLIC, ACC_STATIC
+  Code:
+    stack=2, locals=3, args_size=1
+       0: new           #7                  // class StaticDispatch$Man
+       3: dup
+       4: invokespecial #8                  // Method StaticDispatch$Man."<init>":()V
+       7: astore_1
+       8: new           #9                  // class StaticDispatch$Woman
+      11: dup
+      12: invokespecial #10                 // Method StaticDispatch$Woman."<init>":()V
+      15: astore_2
+      16: aload_1
+      17: invokevirtual #11                 // Method StaticDispatch$Human.sayHello:()V
+      20: aload_2
+      21: invokevirtual #11                 // Method StaticDispatch$Human.sayHello:()V
+      24: new           #9                  // class StaticDispatch$Woman
+      27: dup
+      28: invokespecial #10                 // Method StaticDispatch$Woman."<init>":()V
+      31: astore_1
+      32: aload_1
+      33: invokevirtual #11                 // Method StaticDispatch$Human.sayHello:()V
+      36: return
+    LineNumberTable:
+      line 38: 0
+      line 39: 8
+      line 41: 16
+      line 42: 20
+      line 44: 24
+      line 45: 32
+      line 48: 36
+
+    0 ～ 15行都是准备工作， 即new之类的。16和20把刚刚创建的两个对象的ref压到栈顶，这两个对象是sayHello()方法的接受者，
+    就是方法的调用者。 观察17, 21, 33三个调用，这三个是用了调用虚方法的字节码命令，invokevirtual。
+
+    invokevirtual命令的执行过程：
+    1.找到操作数栈顶指向对象的实际类型，记为C
+    2.在C中找到对应符合的方法（描述符和简单名称），并进行权限检验
+    3.否则对父类进行第二步的检验
+    4.都没有的话抛出异常
+
+    可见在第一步就确定了实际类型，因此会根据实际类型进行方法调用
