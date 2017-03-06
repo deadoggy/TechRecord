@@ -59,3 +59,64 @@
 b. 操作数栈可能会重叠一部分数据，从而优化方法调用。
 
 c. 动态链接： 每个栈帧都会包含一个指向运行时常量池的引用，从而支持动态链接。
+
+2.方法调用
+  方法调用不等同于方法执行，方法调用的作用是确定被调用方法的版本，即哪一个方法被调用。
+  2.1解析
+  由于方法的调用在Class文件里面是符号引用，在类加载的解析阶段，一部分符号引用被转化为了直接引用，但这中解析的前提是方法在程序运行之前有一个可确定的调用版本，
+  并且这个调用版本在程序运行时是不可变的，即调用目标在方法写好，编译器编译时就必须确定下来。这用调用叫做解析。
+  编译时可知，运行时不可变 --- 符合该要求的方法有静态方法， 私有方法， 实例构造器 以及 父类方法。这四类被称作非虚方法。
+  非虚方法还有一种是final方法，虽然该方法被invokevirtual命令调用，但是因为符合上述规定，因此也是非虚方法。
+  2.2分派--重载和重写在jvm中如何实现
+
+  2.2.1静态分派  -- 重载
+  看如下代码：
+  /**
+  * Created by deadoggy on 17-3-6.
+  */
+    public class StaticDispatch {
+
+        public static abstract class Human{}
+
+        public static class Man extends  Human{}
+
+        public static class Woman extends  Human{}
+
+        void say(Human h){
+          System.out.println("h");
+        }
+
+        void say(Man m){
+          System.out.println("m");
+        }
+
+        void say(Woman w){
+          System.out.println("w");
+          }
+
+        public static void main(String[] argv){
+          Human man = new Man();
+          Human woman = new Woman();
+
+          StaticDispatch sr = new StaticDispatch();
+          sr.say(man);
+          sr.say(woman);
+        }
+
+    }
+
+    输出结果是：
+    h
+    h
+  因为main方法中 Human man = new Man(); 一句， Human是静态类型或外观类型， 而Man是实际类型。二者在程序中都可能变化。
+  但是区别是静态类型只在使用时变化， 比如  sr.say( (Man)man ), 使用时变化了，但是man的静态类型还是Hunman， 并且编译
+  器是可知的。 但是实际类型只有在运行时才能得知，比如 Human man = new Man(); man = new Woman();
+
+  main函数中重载方法的选择取决于参数的数量和数据类型， 但是编译器在重载时是根据变量的静态类型来进行选择的。二者静态类型都是
+  Human.
+
+  所有依赖静态类型进行分派都叫做静态分派， 比如 重载 。静态分派发生在编译阶段，所以并不是由虚拟机来执行的。但是此时确定的重载版本
+  并不是唯一的，只是一个相对好的选择。具体代码参见《深入理解JVM（第二版）》 p249 - 重载方法匹配优先级 的代码。
+
+
+  2.2.2 动态分派 -- 重写
