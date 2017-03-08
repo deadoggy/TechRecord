@@ -1,0 +1,64 @@
+Type:
+  Failure/problem/issue/incident
+  Defect/fault/bug
+  Error/mistake
+
+Test terms:
+  object
+  data
+  planning
+  design
+  implement
+  case
+  scenario
+  ...
+
+Lecture 2 Fundamental
+
+  Testing in waterfall --- disadvantage: testing is just a one time action
+  Testing in general V model --- Constructive activities are decomposed from testing
+
+  Fundamental testing process:
+
+  Begin -> Planning and Control-> Analysis&Design -> Impl & Exec -> Evaluation of Exit Criteria and Reporting -> ?
+
+
+                                 control
+
+  Planning & Control
+
+    Intensity of test depends on -- Test tech used & Test coverage
+
+    Prioritization of tests -- Critical parts first
+
+
+  Analysis & Design
+
+    First task -- review the test basis
+    Check testability
+    Ensure traceability bet specifications and tests
+
+    test cases from target's specification(BB) & source code(WB)
+
+    for each case:
+        initial situation -- environment & expected result
+
+    type  -- for expected input
+          -- for unexpected input
+
+  Implementation & Execution
+
+    cases --> group(scenario)
+    Recommendation: smoke test --> start test with examination of functionality
+    Logged -- comprehensible  provable
+    Reproducibility -- testware subjected to configuration management
+
+  Evaluation & Reporting
+
+    test exit criteria
+    whether need  further effort
+    failure rate
+    after repaired, new tests needed -- plan test cycles
+    in practice, end of a test is often defined by time and cost
+    summary report
+    
