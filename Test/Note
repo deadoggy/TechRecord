@@ -20,10 +20,11 @@ Lecture 2 Fundamental
 
   Fundamental testing process:
 
-  Begin -> Planning and Control-> Analysis&Design -> Impl & Exec -> Evaluation of Exit Criteria and Reporting -> ?
-
-
-                                 control
+  Begin -> Planning and Control-> Analysis&Design -> Impl & Exec -> Evaluation of Exit Criteria and Reporting -> Closure Activity
+                ^                        ^             ^                                |                               |
+                |______________________ ____________|________________________________|_______________________________|
+                                         |             |                                |
+                                         |_____________|________________________________|
 
   Planning & Control
 
@@ -61,4 +62,39 @@ Lecture 2 Fundamental
     after repaired, new tests needed -- plan test cycles
     in practice, end of a test is often defined by time and cost
     summary report
-    
+
+  Test Closure Act
+    logs
+    ...
+
+
+  Principles:
+  1.shows the presence of defect
+  2.Exhaustive testing is impossible
+  3.start as early as possible
+  4.defect clustering
+  5.pesticide paradox （杀虫剂悖论）
+  6.content dependent
+  7.No failures means  sys is useful   is a fallacy(谬误)
+
+Lecture 3
+
+  General V-Model:
+    Development -- testing : corresponding ; equal importance; parallel;
+    left - develop
+    right- test
+
+    validation   -- do the right thing : make sure outcomes meet the requirement
+    verification -- thing is done correctly
+
+  Component Test:
+
+    If white box applied, source code can be analyzed
+
+    characters:
+      components are tested individually isolated from other components, necessary to prevent external influences
+        EX:Stored procedure
+    Component could be a unit composed of other components -- only examine internal aspect
+
+    Test environment
+    Test driver: 
