@@ -97,4 +97,5 @@ Lecture 3
     Component could be a unit composed of other components -- only examine internal aspect
 
     Test environment
-    Test driver: 
+    Test driver:  case study
+    framework : JUnit .....
